@@ -4,7 +4,7 @@ A four-pathway structural causal framework for analyzing mass screening programs
 
 ## The Problem
 
-Mass screening programs for low-prevalence problems share a common mathematical structure that makes them prone to backfiring. The National Academy of Sciences' 2003 polygraph report (Fienberg et al.) analyzed this using only the **classification pathway** — applying Bayes' Rule to estimate true/false positive outcomes.
+Mass screenings for low-prevalence problems share a common mathematical structure as signal detection problems that makes them prone to backfiring. The National Academy of Sciences' 2003 polygraph report (Fienberg et al.) analyzed this using only the **classification pathway** — applying Bayes' Rule to estimate hypothetical true and false positive and negative outcomes.
 
 This single-pathway analysis misses three additional causal pathways:
 
@@ -13,7 +13,7 @@ This single-pathway analysis misses three additional causal pathways:
 3. **Information** — knowledge generated through screening (elicitation, bogus pipeline, iatrogenic effects)
 4. **Resource reallocation** — both quantitative (zero-sum capacity) and qualitative (framing)
 
-**Key insight**: Even if a test backfires via Classification (due to rarity + accuracy-error tradeoff), the Strategy and Information pathways may compensate — or amplify the harm. We cannot determine net effects from classification accuracy alone.
+**Key insight**: Even if a test backfires via Classification (due to rarity + accuracy-error trade-off, persistent inferential uncertainty, and secondary screening harms), the Strategy and Information pathways may compensate —- or amplify the harm. There is also a danger that mass screenings may reallocate resources needed for specific information investigation across domains. We cannot determine net effects from classification accuracy alone.
 
 ## Repository Structure
 
@@ -22,7 +22,7 @@ equilibrium-screening/
 ├── security/                    # Security/surveillance applications (implemented)
 │   └── screening_equilibrium.py # Polygraph, iBorderCtrl, Chat Control
 ├── medical/                     # Medical screening applications  
-│   ├── colonoscopy_deskilling.py    # Starter from Budzyń (awaiting Oslo data)
+│   ├── colonoscopy_deskilling.py    # Starter from Budzyń et al (awaiting Oslo data)
 │   └── README.md
 └── requirements.txt
 ```
@@ -75,7 +75,7 @@ print(results['polygraph'])     # Uncertain - may help via non-classification pa
 | Polygraph specificity | 0.50-0.80 | Wide | NAS (2003) |
 | AI colonoscopy deskilling | -6.0 pp | [-10.5, -1.6] | Budzyń et al. (2025) |
 
-## References
+## Core References
 
 - Besserve, M., & Schölkopf, B. (2022). Learning soft interventions in complex equilibrium systems. UAI 2022.
 - Budzyń, K., et al. (2025). Endoscopist deskilling risk after exposure to AI in colonoscopy. Lancet Gastroenterol Hepatol.
@@ -83,6 +83,13 @@ print(results['polygraph'])     # Uncertain - may help via non-classification pa
 - Roese, N. J., & Jamieson, D. W. (1993). Twenty years of bogus pipeline research. Psychological Bulletin.
 - Wilde, V. (2014). Neutral Competence? Polygraphy and Technology-Mediated Administrative Decisions. PhD Dissertation, UVA.
 
+## Medical Applications References
+
+- Soleymanjahi, S., et al. (2024). Artificial intelligence-assisted colonoscopy for polyp detection: A systematic review and meta-analysis. Ann Intern Med.
+- Sultan, S., et al. (2025). AGA Living Clinical Practice Guideline on Computer-Aided Detection-Assisted Colonoscopy. Gastroenterology.
+- Ribers, M., & Ullrich, H. (2024). Complementarities between algorithmic and human decision-making. Quantitative Marketing and Economics.
+- Kalager, M., et al. (2010). Effect of screening mammography on breast-cancer mortality in Norway. NEJM.
+  
 ## Author
 
 Vera Wilde — [Wilde Truth](https://wildetruth.substack.com)
