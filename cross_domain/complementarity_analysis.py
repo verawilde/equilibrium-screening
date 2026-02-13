@@ -27,6 +27,17 @@ Author: Vera Wilde
 Date: February 2026
 """
 
+# IMPORTANT LIMITATION: Colonoscopy complementarity analysis operates on the
+# CONDITIONAL confusion matrix (detected-and-removed lesions only). Unlike
+# Ribers & Ullrich's UTI case where lab culture validated every patient's
+# classification regardless of the physician's decision (unconditional 2x2
+# table), histopathology in colonoscopy validates only removed lesions.
+# False negatives (missed lesions) must be estimated from ACCEPT's
+# randomization (AI-on vs. AI-off detection rate comparisons) or from
+# tandem colonoscopy miss rate literature (22-27%, Zhao et al. 2019).
+# The complementarity analysis is therefore more uncertain than in the
+# UTI case, particularly for undetected lesions.
+
 import numpy as np
 
 try:
