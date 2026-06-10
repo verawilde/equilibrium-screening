@@ -5,7 +5,10 @@ Wilde (2026): Structural Causal Modeling for Mass Screening Programs
 Implements structural equations from §4, produces:
 1. Point estimates for Chat Control vs. Police Polygraph
 2. Sensitivity table: Y* as base rate varies from 1/100 to 1/10,000
-3. Uncertainty propagation (Gelman & Carpenter approach)
+3. Uncertainty propagation: Monte Carlo over key parameters (Chat Control)
+4. Theta (normative weighting) sensitivity analysis (Chat Control)
+5. Lambda (information-pathway transport) sweep (Police Polygraph)
+6. Illustrative iBorderCtrl run (developers' own contested lab figures)
 
 Parameters grounded in §11 literature estimates.
 """
@@ -395,3 +398,29 @@ Interpretation:
     simulation-vs-data disagreement to lambda and shows the empirical
     direction points to the lambda < lambda* (harm-or-inert) branch.
 """)
+
+# ── 9. ILLUSTRATIVE iBorderCtrl RUN (developers' own contested best-case figures) ──
+print("\n\n" + "="*70)
+print("ILLUSTRATIVE: iBorderCtrl (O'Shea et al. 2018 lab figures, n=30)")
+print("Sensitivity=0.737, Specificity=0.756  — unvalidated, contested")
+print("="*70)
+
+iborderctrl = {
+    "T": 1.0, "X": 100_000_000,
+    "sensitivity": 0.737, "specificity": 0.756,
+    "awareness": 0.5, "evasion_rate": 0.7, "sophistication": 0.7,
+    "bogus_pipeline_d": 0.41, "has_interrogation": True,
+    "capacity": 3000 * 2000, "cost_per_unit": 0,
+    "label": "iBorderCtrl (illustrative)",
+}
+
+print("\nClassification PPV across base rates (scale-free):")
+for pi in [1/100, 1/1000, 1/10000]:
+    tp, fp, fn, tn = classification_output(1.0, 1e9, pi, 0.737, 0.756)
+    ppv = tp/(tp+fp)
+    print(f"  pi=1/{int(round(1/pi)):>5}:  PPV={ppv*100:6.3f}%  -> {100-ppv*100:.3f}% false positives")
+
+print("\nY* under generous (lambda=1, grant elicitation works) vs no-info (lambda=0):")
+for lam in [1.0, 0.0]:
+    r = run_simulation(iborderctrl, 1/1000, lam=lam)
+    print(f"  lambda={lam}: Y*={r['Y_star']:+.4f} ({'benefit' if r['Y_star']>=0 else 'HARM'}); strat={r['strategy']:+.3f} info={r['information']:+.3f} resource={r['resource_load']:.2f}x")
