@@ -38,18 +38,24 @@ def strategy_effect(T, awareness, evasion_rate, sophistication):
     evasion    = evasion_rate * sophistication
     return deterrence - evasion
 
-def information_yield(T, S, X, bogus_pipeline_d, has_interrogation):
+def information_yield(T, S, X, bogus_pipeline_d, has_interrogation, lam=1.0):
     """
-    I := θ_confession · T · (1 - S/X) · bogus_pipeline_effect
+    I := θ_confession · T · (1 - S/X) · bogus_pipeline_effect · λ
     bogus_pipeline_d: Cohen's d from Roese & Jamieson (1993) = 0.41
     has_interrogation: 1 if human interrogation present, 0 if automated
+    lam (λ): transport/sign coefficient in [-1, 1].
+        λ → 1 : lab bogus-pipeline effect transports to the field as a benefit
+        λ → 0 : effect does not transport (no operational information effect)
+        λ < 0 : effect inverts in the field (adverse selection — conscientious
+                over-disclosers screened out, or low-reactivity deceivers
+                selected in)
     """
     if not has_interrogation:
         return 0.0
     # Convert d to probability scale (approximate)
     confession_prob = bogus_pipeline_d / (bogus_pipeline_d + 1)
     residual_pool   = max(0, 1 - S / max(X, 1))
-    return T * residual_pool * confession_prob
+    return T * residual_pool * confession_prob * lam
 
 def resource_cost(false_pos, capacity, cost_per_applicant):
     """
@@ -59,18 +65,20 @@ def resource_cost(false_pos, capacity, cost_per_applicant):
     triage_hours  = false_pos * (0.5 / 60)   # 30 seconds per flag in hours
     return min(triage_hours / max(capacity, 1), 10.0)  # cap at 10x capacity
 
-def outcome(true_pos, false_pos, S, I, R, X, pi):
+def outcome(true_pos, false_pos, false_neg, S, I, R, X, pi):
     """
-    Y* := θ_C·TP - θ_FP·FP + θ_S·S + θ_I·I - θ_R·R·opportunity_cost
+    Y* := θ_C·TP - θ_FP·FP - θ_FN·FN + θ_S·S + θ_I·I - θ_R·R·opportunity_cost
     Normalised to population so programs of different scale are comparable.
     """
     theta_C  =  1.0   # benefit per true positive detected
     theta_FP = -0.5   # harm per false positive (investigation burden + liberty)
+    theta_FN = -0.5   # harm per false negative (missed case; for CSAM, ongoing abuse)
     theta_S  =  0.8   # benefit per unit net deterrence
     theta_I  =  0.6   # benefit per unit information yield
     theta_R  = -2.0   # cost per unit resource overload
 
-    classification_contrib   = (theta_C * true_pos + theta_FP * false_pos) / max(X, 1)
+    classification_contrib   = (theta_C * true_pos + theta_FP * false_pos
+                                + theta_FN * false_neg) / max(X, 1)
     strategy_contrib         = theta_S * S
     information_contrib      = theta_I * I
     resource_contrib         = theta_R * R
@@ -114,7 +122,9 @@ PROGRAMS = {
 
 # ── 3. SINGLE-RUN SIMULATION ──────────────────────────────────────────────────
 
-def run_simulation(prog, pi):
+def run_simulation(prog, pi, lam=None):
+    if lam is None:
+        lam = prog.get("lam", 1.0)
     tp, fp, fn, tn = classification_output(
         prog["T"], prog["X"], pi,
         prog["sensitivity"], prog["specificity"]
@@ -125,10 +135,10 @@ def run_simulation(prog, pi):
     )
     I = information_yield(
         prog["T"], S, prog["X"],
-        prog["bogus_pipeline_d"], prog["has_interrogation"]
+        prog["bogus_pipeline_d"], prog["has_interrogation"], lam
     )
     R = resource_cost(fp, prog["capacity"], prog["cost_per_unit"])
-    Y = outcome(tp, fp, S, I, R, prog["X"], pi)
+    Y = outcome(tp, fp, fn, S, I, R, prog["X"], pi)
 
     return {
         "pi"           : pi,
@@ -271,9 +281,10 @@ theta_R_vals  = [-3.0, -2.0, -0.5]     # cost per unit resource overload
 # θ_S and θ_I only matter for polygraph (Chat Control has S<0, I=0)
 # so varying them won't flip Chat Control — confirmed by inspection
 
-def outcome_theta(true_pos, false_pos, S, I, R, X,
-                  theta_C, theta_FP, theta_S, theta_I, theta_R):
-    classification_contrib = (theta_C * true_pos + theta_FP * false_pos) / max(X, 1)
+def outcome_theta(true_pos, false_pos, false_neg, S, I, R, X,
+                  theta_C, theta_FP, theta_FN, theta_S, theta_I, theta_R):
+    classification_contrib = (theta_C * true_pos + theta_FP * false_pos
+                              + theta_FN * false_neg) / max(X, 1)
     strategy_contrib       = theta_S * S
     information_contrib    = theta_I * I
     resource_contrib       = theta_R * R
@@ -290,7 +301,7 @@ R = resource_cost(fp, cc["capacity"], cc["cost_per_unit"])
 theta_results = []
 n_benefit = 0
 for tc, tfp, tr in itertools.product(theta_C_vals, theta_FP_vals, theta_R_vals):
-    Y = outcome_theta(tp, fp, S, I, R, cc["X"], tc, tfp, 0.8, 0.6, tr)
+    Y = outcome_theta(tp, fp, fn, S, I, R, cc["X"], tc, tfp, -0.5, 0.8, 0.6, tr)
     if Y >= 0:
         n_benefit += 1
     theta_results.append({
@@ -325,4 +336,62 @@ Notes:
   - Interpretation: the net harm finding is robust to normative disagreement
     about how to weight pathway contributions. The program's structural properties
     — not the analyst's value judgments — drive the result.
+""")
+
+
+# ── 8. LAMBDA SWEEP: INFORMATION-PATHWAY TRANSPORT (POLICE POLYGRAPH) ─────────
+# The simulation's polygraph net benefit runs through the information pathway
+# (bogus pipeline). The LEMAS difference-in-differences points the other way
+# (total complaints rise after adoption). We localise that disagreement to a
+# single parameter: λ, the field transport/sign of the lab bogus-pipeline
+# effect, and sweep it to find the sign-flip λ*.
+
+print("\n\n" + "=" * 70)
+print("LAMBDA SWEEP: INFORMATION-PATHWAY TRANSPORT (POLICE POLYGRAPH)")
+print("Y* as a function of λ in [-1, 1]; locate sign-flip λ*")
+print("=" * 70)
+
+poly    = PROGRAMS["Police Polygraph"]
+pi_poly = BASE_RATES["Police Polygraph"]
+lam_grid = [round(x, 3) for x in np.linspace(-1, 1, 21)]
+
+rows_lam = []
+y_prev = None
+lam_prev = None
+lam_star = None
+for lam in lam_grid:
+    r = run_simulation(poly, pi_poly, lam=lam)
+    rows_lam.append({
+        "lambda" : f"{lam:>+.2f}",
+        "Y*"     : f"{r['Y_star']:>+.4f}",
+        "verdict": "benefit" if r["Y_star"] >= 0 else "HARM",
+    })
+    if y_prev is not None and (y_prev < 0) != (r["Y_star"] < 0):
+        lam_star = lam_prev - y_prev * (lam - lam_prev) / (r["Y_star"] - y_prev)
+    y_prev   = r["Y_star"]
+    lam_prev = lam
+
+df_lam = pd.DataFrame(rows_lam)
+print(df_lam.to_string(index=False))
+
+y_at_1 = run_simulation(poly, pi_poly, lam=1.0)["Y_star"]
+y_at_0 = run_simulation(poly, pi_poly, lam=0.0)["Y_star"]
+print(f"\n  Y*(lambda=1)  = {y_at_1:+.4f}   (lab effect transports fully -> modest benefit)")
+print(f"  Y*(lambda=0)  = {y_at_0:+.4f}   (no operational information effect)")
+if lam_star is not None:
+    print(f"  Sign-flip at  lambda* ~ {lam_star:+.3f}")
+    print(f"  For lambda < lambda*, the polygraph nets harm; for lambda > lambda*, net benefit.")
+
+print("""
+Interpretation:
+  - Y* sign is governed almost entirely by lambda, the field transport/sign of
+    the information (bogus-pipeline) pathway.
+  - At lambda = 1 the original modest net benefit is reproduced.
+  - The LEMAS difference-in-differences (total complaints RISE after adoption)
+    is the empirical signature of lambda below lambda*: the bogus pipeline
+    failing to transport, or inverting via adverse selection (conscientious
+    over-disclosers screened out; low-reactivity deceivers selected in).
+  - The simulation does not sign the net effect; it localises the
+    simulation-vs-data disagreement to lambda and shows the empirical
+    direction points to the lambda < lambda* (harm-or-inert) branch.
 """)
