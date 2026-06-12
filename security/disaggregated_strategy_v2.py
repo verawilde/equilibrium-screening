@@ -353,6 +353,8 @@ if __name__ == "__main__":
         "\n  NOTE: Polygraph strategy pathway is also mildly negative here.\n"
         "  Polygraph's positive Y* in the full simulation is driven by the\n"
         "  Information pathway (bogus pipeline, d=0.41), not by deterrence.\n"
-        "  This confirms the working paper's interpretation of the LEMAS finding."
+        "  That positive Y* hinges on the bogus pipeline transporting from lab\n"
+        "  to field; the LEMAS difference-in-differences points the other way\n"
+        "  (total complaints rise), so the paper leaves the net effect unsigned."
     )
     print("=" * 70)
