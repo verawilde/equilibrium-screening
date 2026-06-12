@@ -460,10 +460,11 @@ def security_polygraph() -> ScreeningDomain:
                     "But equilibrium effects still operate: Strategy pathway "
                     "(applicant self-selection/deterrence) and Information pathway "
                     "(bogus pipeline confession elicitation, d=0.41) may dominate. "
-                    "LEMAS data suggest strong effect on sustained complaints "
-                    "(-15.57 log, 95% CI [-25.1, -6.0]) but not total complaints, "
-                    "consistent with selecting non-confessors rather than reducing "
-                    "actual misconduct."
+                    "LEMAS negative-binomial reanalysis finds total complaints "
+                    "RISE after adoption (IRR 2.4, 95% CI [1.17, 4.97], entirely "
+                    "above 1); sustained complaints are directionally uncertain "
+                    "(IRR 3.0, 95% CI [0.76, 11.8]). This is the opposite of what "
+                    "benefit mechanisms predict, leaving the net effect unsigned."
                 )
             )
         ],
@@ -475,7 +476,7 @@ def security_polygraph() -> ScreeningDomain:
         ],
         parameter_sources=[
             "NAS 2003 polygraph report (sensitivity/specificity ranges)",
-            "LEMAS 2003-2007 (diff-in-diff, Wilde 2014)",
+            "LEMAS 2003-2007 (diff-in-diff, negative binomial; Wilde 2016)",
             "Roese & Jamieson 1993 (bogus pipeline: d=0.41 [0.25, 0.57])",
             "Pratt et al. 2006 (deterrence: r~0.15 [0.05, 0.25])",
         ],
