@@ -12,7 +12,7 @@ Four pathways from Test to Outcome:
 4. RESOURCE REALLOCATION: Zero-sum capacity, Framing effects
 
 Applications (chronological):
-- Police Polygraph Programs (Wilde 2014 LEMAS analysis)
+- Police Polygraph Programs (LEMAS analysis; Wilde 2016)
 - iBorderCtrl (EU border AI pilot, 2016-2019)
 - Chat Control (EU CSAM scanning proposal)
 
@@ -54,13 +54,16 @@ class ParameterEstimates:
     polygraph_specificity_low: float = 0.50
     polygraph_specificity_high: float = 0.80
     
-    # LEMAS polygraph effects - Wilde (2014)
-    lemas_sustained_complaints_log: float = -15.57
-    lemas_sustained_ci_low: float = -25.1
-    lemas_sustained_ci_high: float = -6.0
-    lemas_total_complaints_log: float = -62.34
-    lemas_total_ci_low: float = -157.8
-    lemas_total_ci_high: float = 33.1
+    # LEMAS polygraph effects - negative-binomial reanalysis (Wilde 2016)
+    # Reported as incidence rate ratios (IRR); IRR>1 = more complaints after adoption.
+    # Supersedes the dissertation's log-OLS estimates, which were inappropriate
+    # for this zero-inflated, overdispersed count outcome.
+    lemas_sustained_complaints_irr: float = 3.0
+    lemas_sustained_ci_low: float = 0.76
+    lemas_sustained_ci_high: float = 11.8
+    lemas_total_complaints_irr: float = 2.4
+    lemas_total_ci_low: float = 1.17
+    lemas_total_ci_high: float = 4.97
 
 
 class FourPathwayModel(nn.Module):
@@ -270,12 +273,14 @@ class PolygraphModel(FourPathwayModel):
     """
     Police polygraph application: Pre-employment screening for law enforcement.
     
-    From Wilde (2014) LEMAS analysis:
-    - Sustained complaints (log): -15.57, 95% CI [-25.1, -6.0]
-    - Total complaints (log): -62.34, 95% CI [-157.8, +33.1]
+    From Wilde (2016) LEMAS negative-binomial reanalysis (IRR; IRR>1 = more complaints):
+    - Sustained complaints: IRR 3.0, 95% CI [0.76, 11.8] (straddles 1; direction uncertain)
+    - Total complaints: IRR 2.4, 95% CI [1.17, 4.97] (entirely above 1; complaints rise)
     
-    Key insight: Effect likely operates through Strategy (self-selection) and/or
-    Information (bogus pipeline), not Classification accuracy.
+    Key insight: total complaints rise after adoption - the opposite of what every
+    benefit mechanism predicts. The simulation's positive Y* depends on the bogus-pipeline
+    effect transporting from lab to field; the LEMAS data point the other way, so the
+    net effect is left unsigned (see paper Section 6.4).
     """
     
     def __init__(self, **kwargs):
@@ -413,7 +418,7 @@ if __name__ == '__main__':
     
     comparison = compare_programs()
     
-    print("\n--- POLICE POLYGRAPH (Wilde 2014 LEMAS) ---")
+    print("\n--- POLICE POLYGRAPH (Wilde 2016 LEMAS) ---")
     for k, v in comparison['polygraph'].items():
         print(f"   {k}: {v:.4f}")
     
