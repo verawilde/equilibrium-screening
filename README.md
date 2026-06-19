@@ -19,12 +19,21 @@ This single-pathway analysis misses three additional causal pathways:
 
 ```
 equilibrium-screening/
-├── security/                    # Security/surveillance applications (implemented)
-│   └── screening_equilibrium.py # Polygraph, iBorderCtrl, Chat Control
-├── medical/                     # Medical screening applications  
-│   ├── colonoscopy_deskilling.py    # Starter from Budzyń et al (awaiting Oslo data)
+├── security/                                # Security/surveillance applications (implemented)
+│   ├── screening_equilibrium.py             # Four-pathway SCM: Polygraph, iBorderCtrl, Chat Control
+│   ├── simulation_chat_control_polygraph_iBorderCtrl.py  # Monte Carlo + normative sensitivity runs
+│   ├── disaggregated_strategy_v2.py         # Strategy pathway: casual vs dedicated offender split
+│   ├── disaggregated_resource_sim.py        # Resource pathway: triage vs specialist bottleneck
+│   └── 06-12-26_When_Mass_Security_Screening_Backfires_with_figures.pdf
+├── medical/                                 # Medical screening applications
+│   ├── colonoscopy_deskilling.py            # Starter from Budzyń et al. (awaiting Oslo data)
 │   └── README.md
-└── requirements.txt
+├── cross_domain/                            # Cross-domain framework components
+│   ├── complementarity_analysis.py
+│   └── validation_hierarchy.py
+├── test_cross_domain.py                     # Test suite for cross-domain components
+├── requirements.txt
+└── LICENSE
 ```
 
 ## Applications
