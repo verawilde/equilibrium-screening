@@ -320,22 +320,56 @@ class PolygraphModel(FourPathwayModel):
 class IBorderCtrlModel(FourPathwayModel):
     """
     iBorderCtrl: EU-funded pilot (2016-2019) testing AI "lie detection" at borders.
-    
-    The project faced substantial scientific criticism and was not adopted.
-    This represents a success case for evidence-based critique.
+
+    No validated pilot accuracy data exist: the project's own reliability figures were
+    withheld on commercial-interest grounds (Breyer v REA, T-158/19 / C-135/22 P) and
+    never disclosed. The sensitivity/specificity here are the developers' own contested
+    lab figures from a 30-participant validation (O'Shea et al. 2018, ~73.7% / ~75.6%),
+    used illustratively to show the program backfires under rarity even on its
+    proponents' best case (see paper Section 7). They are NOT field figures, and the
+    headline "76%" is an amalgam across emotion categories and error types rather than a
+    validated single-construct accuracy rate.
+
+    The project faced substantial scientific criticism and was not adopted. This
+    represents a (qualified) success case for evidence-based critique.
     """
-    
+
     def __init__(self, **kwargs):
         defaults = {
-            'sensitivity': 0.60,  # No validated accuracy
-            'specificity': 0.70,
+            'sensitivity': 0.737,  # O'Shea et al. 2018 lab figure (unvalidated)
+            'specificity': 0.756,  # O'Shea et al. 2018 lab figure (unvalidated)
             'theta_deterrence': 0.02,  # Weak
-            'theta_evasion': 0.25,     # Strong - traffickers evade
-            'theta_confession': 0.10,  # Weak - automated kiosk
+            'theta_evasion': 0.25,     # Strong - sophisticated actors evade
+            'theta_confession': 0.10,  # Weak - automated kiosk, no human elicitation
             'investigative_capacity': 500.0,
         }
         defaults.update(kwargs)
         super().__init__(**defaults)
+
+    def analyze(
+        self,
+        travelers: float = 1000.0,
+        problematic_rate: float = 0.10
+    ) -> Dict[str, float]:
+        T = torch.tensor(1.0)
+        X = torch.tensor(travelers)
+        pi = torch.tensor(problematic_rate)
+
+        results = self.forward(T, X, pi, return_components=True)
+
+        ppv = results['TP'] / (results['C'] + 1e-6)
+
+        return {
+            'outcome': results['Y'].item(),
+            'flagged_travelers': results['C'].item(),
+            'true_positives': results['TP'].item(),
+            'false_positives': results['FP'].item(),
+            'ppv': ppv.item(),
+            'p_innocent_given_flagged': (1 - ppv).item(),
+            'net_deterrence': results['S'].item(),
+            'information_yield': results['I'].item(),
+            'resource_allocation': results['R'].item()
+        }
 
 
 class ChatControlModel(FourPathwayModel):
